@@ -13,7 +13,7 @@ from utils.logger import print_log
 from utils.mesh import save_mesh_as_obj, normalize
 from utils.pytorch import get_torch_device
 
-
+# for multi view, make batch size a multiple of 2 for testing purpose
 BATCH_SIZE = 32
 N_WORKERS = 4
 PRINT_ITER = 10
@@ -42,6 +42,9 @@ if __name__ == '__main__':
     n_zeros = int(np.log10(len(data) - 1)) + 1
     for j, (inp, _) in enumerate(loader):
         imgs = inp['imgs'].to(device)
+        features = m.encoder(imgs)
+        print(features.shape)
+        exit(0)
         meshes = m.predict_meshes(m.encoder(imgs))
 
         B, d, e = len(imgs), m.T_cam[-1], np.mean(m.elev_range)
