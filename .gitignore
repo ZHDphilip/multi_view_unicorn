@@ -29,3 +29,5 @@ _cache*
 /models_old_fmt
 /runs
 /visdom
+/epfl*
+/multi_view_car*

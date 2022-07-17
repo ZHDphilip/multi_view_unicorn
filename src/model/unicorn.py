@@ -246,15 +246,21 @@ class Unicorn(nn.Module):
     def refine_meshes(self, features):
         # first draft, refine shape using 1st img
         verts, faces = self.mesh_src.get_mesh_verts_faces(0)
-        draft_mesh = self.mesh_src.extend(len(features[0]))  # XXX does a copy
-        draft_mesh.offset_verts_(self.predict_disp_verts(verts, features[0]))
+        # print(f"verts shape: {verts.shape}")
+        draft_mesh = self.mesh_src.extend(len(features[:,0]))  # XXX does a copy
+        disp = self.predict_disp_verts(verts, features[:,0])
+        # print(f"disp shape: {disp.shape}")
+        draft_mesh.offset_verts_(disp)
         # refine draft using 2nd image
         verts, faces = draft_mesh.get_mesh_verts_faces(0)
-        draft_mesh = draft_mesh.extend(len(features[1]))
-        draft_mesh.offset_verts_(self.predict_disp_verts(verts, features[1]))
+        # print(f"new verts shape: {verts.shape}")
+        # draft_mesh = draft_mesh.extend(len(features[:,1]))
+        disp_1 = self.predict_disp_verts(verts, features[:,1])
+        # print(f"new disp shape: {disp_1.shape}")
+        draft_mesh.offset_verts_(disp_1)
         # do texture pred and uv mapping 
-        draft_mesh.textures = self.predict_textures(faces, features[0])
-        draft_mesh.scale_verts_(self.predict_scales(features[0]))
+        draft_mesh.textures = self.predict_textures(faces, features[:,0])
+        draft_mesh.scale_verts_(self.predict_scales(features[:,0]))
         return draft_mesh
 
     def predict_disp_verts(self, verts, features):

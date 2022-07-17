@@ -13,10 +13,10 @@ from utils.logger import print_log
 from utils.mesh import save_mesh_as_obj, normalize
 from utils.pytorch import get_torch_device
 
-# for multi view, make batch size a multiple of 2 for testing purpose
-BATCH_SIZE = 32
+# for multi view, make batch size 2 for testing purpose
+BATCH_SIZE = 4
 N_WORKERS = 4
-PRINT_ITER = 10
+PRINT_ITER = 2
 SAVE_GIF = True
 warnings.filterwarnings("ignore")
 
@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='3D reconstruction from single-view images in a folder')
     parser.add_argument('-m', '--model', nargs='?', type=str, required=True, help='Model name to use')
     parser.add_argument('-i', '--input', nargs='?', type=str, required=True, help='Input folder')
+    parser.add_argument('-o', '--output', type=str, default="_rec", help="suffix for output directory")
     args = parser.parse_args()
     assert args.model is not None and args.input is not None
 
@@ -38,16 +39,16 @@ if __name__ == '__main__':
     print_log(f"Found {len(data)} images in the folder")
 
     print_log("Starting reconstruction...")
-    out = path_mkdir(args.input + '_rec')
+    out = path_mkdir(args.input + args.output)
     n_zeros = int(np.log10(len(data) - 1)) + 1
     for j, (inp, _) in enumerate(loader):
         imgs = inp['imgs'].to(device)
         features = m.encoder(imgs)
         print(features.shape)
-        exit(0)
-        meshes = m.predict_meshes(m.encoder(imgs))
-
-        B, d, e = len(imgs), m.T_cam[-1], np.mean(m.elev_range)
+        features = features.view(-1, 2, 512)
+        meshes = m.refine_meshes(features)
+        # meshes = m.predict_meshes(features)
+        B, d, e = len(imgs)//2, m.T_cam[-1], np.mean(m.elev_range)
         for k in range(B):
             nb = j*B + k
             if nb % PRINT_ITER == 0:
